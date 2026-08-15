@@ -1,81 +1,79 @@
-# Our Workflows
+# cFS GitHub Actions Workflows
 
-## Reusable Workflows
+This document describes the workflows and reusable actions currently maintained on the `dev` branch.
 
-To reduce duplication, the workflows CodeQL Analysis, Static Analysis, and Format Checker are placed in cFS to be reused in the subrepositories. 
+GitHub currently reports the repository workflows below as active. Reusable workflows are invoked by cFS subrepositories or other workflows and may not run directly on every push or pull request.
 
-CodeQL Analysis and Static Analysis require inputs, therefore, they are called in an additional workflow in cFS to be utilized. Format checker does not need to be reused in cFS because it does not require inputs. 
+## Active workflows
 
-Provided is a diagram of the architecture of the reusable workflows.
+| Workflow | File | Purpose |
+| --- | --- | --- |
+| Changelog | `changelog.yml` | Generate the cFS changelog. |
+| Format Check | `format-check.yml` | Run source-format validation. |
+| CodeQL Analysis: cFS-Bundle | `codeql-analysis.yml` | Run CodeQL for the cFS bundle. |
+| CodeQL Reusable Workflow | `codeql-reusable.yml` | Reusable CodeQL analysis for cFS repositories. |
+| Update wiki | `cfs-wiki.yml` | Update the cFS wiki. |
+| MCDC Analysis | `mcdc.yml` | Run MC/DC analysis for the cFS bundle. |
+| Build and execute CFS with multiple configurations | `test-cfs-qemu.yml` | Build and execute cFS test configurations. |
+| Update CFS bundle | `update-bundle.yml` | Update bundle component references. |
+| Build And Run Reusable Workflow | `build-run-app-reusable.yml` | Build and run an application with cFE. |
+| Add Issues or PRs to Project Reusable Workflow | `add-to-project-reusable.yml` | Reusable project-board automation. |
+| Add Issue or PR to Project | `add-to-project.yml` | Add issues and pull requests to the project board. |
+| Build and Test using multitarget makefile | `build-cfs-multitarget.yml` | Exercise the multitarget build. |
+| Build Document Reusable Workflow | `build-doc-reusable.yml` | Reusable documentation build. |
+| MCDC Reusable Workflow | `mcdc-reusable.yml` | Reusable MC/DC analysis. |
+| Unit Test and Coverage Reusable Workflow | `unit-test-coverage-reusable.yml` | Reusable unit-test and coverage analysis. |
+| Static Analysis Reusable Workflow | `static-analysis-reusable.yml` | Reusable cppcheck static analysis. |
+| Build COSMOS gem | `cosmos-gem.yml` | Build the cFS COSMOS integration gem. |
+| Build COSMOS tests | `cosmos-test.yml` | Build and execute COSMOS integration tests. |
+
+The workflow list and status can also be checked from the repository's **Actions** tab. Keeping this table aligned with the files on `dev` avoids documenting removed workflow names or obsolete trigger behavior.
+
+## Reusable workflow architecture
+
+Several workflows are deliberately centralized in cFS so that subrepositories can invoke the same implementation rather than carrying copies. These include CodeQL, static analysis, MC/DC, unit-test coverage, documentation, application build/run, and project-board automation.
 
 ![Reusable Workflows Architecture](./Reusable-Workflows-Architecture.svg)
 
-## Deprecated Build, Test, and Run
-[![Deprecated Build, Test, and Run](https://github.com/nasa/cfs/actions/workflows/build-cfs-deprecated.yml/badge.svg)](https://github.com/nasa/cfs/actions/workflows/build-cfs-deprecated.yml)
+## Repository composite actions
 
-This action builds, tests, and runs the cFS bundle using deprecated code. The flag OMIT_DEPRECATED is set to false. For more information on the OMIT_DEPRECATED flag, see [global_build_options.cmake](https://github.com/nasa/cFE/blob/063b4d8a9c4a7e822af5f3e4017599159b985bb0/cmake/sample_defs/global_build_options.cmake). 
+The workflows also use reusable composite actions maintained in this repository under `actions/`:
 
-Build, Test, and Run runs for every push and every pull request on all branches of cFS in Github Actions.
+| Action | Path | Purpose |
+| --- | --- | --- |
+| Build app | `actions/build-app` | Build an application and package its artifacts. |
+| cppcheck | `actions/cppcheck` | Run cppcheck and publish a static-analysis summary. |
+| Health-check logs | `actions/healthcheck-logs` | Check runtime logs for expected startup output. |
+| Setup app | `actions/setup-app` | Assemble cFE, dependencies, configuration, and application source for a test build. |
+| Start cFS container | `actions/start-cfs-container` | Start a cFS execution container for runtime tests. |
+| Stop cFS container | `actions/stop-cfs-container` | Stop the execution container created by the test workflow. |
 
-## Build, Test, and Run [OMIT_DEPRECATED=true]
-[![Build, Test, and Run %5B OMIT_DEPRECATED=true %5B](https://github.com/nasa/cfs/actions/workflows/build-cfs.yml/badge.svg)](https://github.com/nasa/cfs/actions/workflows/build-cfs.yml)
+Individual workflows additionally use GitHub and third-party actions such as `actions/checkout`, `actions/upload-artifact`, `actions/download-artifact`, the GitHub CodeQL actions, and duplicate-run filtering. The workflow files are the source of truth for the exact action version used by each job.
 
-This action builds, tests, and runs the cFS bundle omitting deprecated code.
+## Key analysis workflows
 
-Build, Test, and Run [OMIT_DEPRECATED=true] runs for every push and every pull request on all branches of cFS in Github Actions. For more information on the OMIT_DEPRECATED flag, see [global_build_options.cmake](https://github.com/nasa/cFE/blob/063b4d8a9c4a7e822af5f3e4017599159b985bb0/cmake/sample_defs/global_build_options.cmake). 
+### CodeQL
 
-## Build and Test in RTEMS [OMIT_DEPRECATED=true]
-[![Build and Test rtems 4.11 [OMIT_DEPRECATED=true]](https://github.com/nasa/cFS/actions/workflows/build-cfs-rtems4.11.yml/badge.svg)](https://github.com/nasa/cFS/actions/workflows/build-cfs-rtems4.11.yml)
-[![Build and Test rtems 5 [OMIT_DEPRECATED=true]](https://github.com/nasa/cFS/actions/workflows/build-cfs-rtems5.yml/badge.svg)](https://github.com/nasa/cFS/actions/workflows/build-cfs-rtems5.yml)
+`codeql-analysis.yml` invokes the reusable CodeQL workflow for the cFS bundle. CodeQL results are uploaded to GitHub code scanning and can be reviewed from the repository's **Security** tab.
 
-This action builds and tests the cFS bundle omitting deprecated code in both RTEMS 4.11 and RTEMS 5.
+### Static analysis
 
-Build and Test in RTEMS 4.11 and 5 runs for every push and every pull request on all branches of cFS in Github Actions.
+`static-analysis-reusable.yml` runs the repository `actions/cppcheck` composite action. The cppcheck action writes its result table to the GitHub job summary and uploads the raw analysis output as the `cppcheck-errors` artifact.
 
-## CodeQL Analysis
-[![CodeQL Analysis](https://github.com/nasa/cfs/actions/workflows/codeql-build.yml/badge.svg)](https://github.com/nasa/cfs/actions/workflows/codeql-build.yml)
+### Format check
 
-This action runs GitHub's static analysis engine, CodeQL, against our repository's source code to find security vulnerabilities. It then automatically uploads the results to GitHub so they can be displayed in the repository's code scanning alerts found under the security tab. CodeQL runs an extensible set of [queries](https://github.com/github/codeql), which have been developed by the community and the [GitHub Security Lab](https://securitylab.github.com/) to find common vulnerabilities in your code.
+`format-check.yml` validates source formatting against the repository formatting rules.
 
-CodeQL runs for every push and pull-request on all branches of cFS in GitHub Actions.
+### Unit test, coverage, and MC/DC
 
-For the CodeQL GitHub Actions setup, visit https://github.com/github/codeql-action.
+`unit-test-coverage-reusable.yml` provides shared unit-test and coverage behavior, while `mcdc-reusable.yml` provides the reusable MC/DC analysis used by the bundle-level workflow.
 
-Our CodeQL action uses a configuration file to use specific queries, which can be found at [.github/codeql](https://github.com/nasa/cFS/tree/main/.github/codeql).
+## Build and integration workflows
 
-## Static Analysis
-[![Static Analysis](https://github.com/nasa/cfs/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/nasa/cfs/actions/workflows/static-analysis.yml)
+`build-run-app-reusable.yml` provides a common build-and-run path for cFS applications. `build-cfs-multitarget.yml` exercises the multitarget makefile, and `test-cfs-qemu.yml` builds and executes multiple cFS configurations.
 
-This action runs a static analysis tool for C/C++ code known as cppcheck. Cppcheck is designed to be able to analyze C/C++ code even if it has non-standard syntax, which is common in embedded projects.
+COSMOS integration is covered by `cosmos-gem.yml` and `cosmos-test.yml`. Bundle updates are handled by `update-bundle.yml`, and documentation builds can use `build-doc-reusable.yml`.
 
-The cFS Cppcheck GitHub Actions workflow and results are available to the public. To view the results, select a workflow and download the artifacts.
+## Maintenance
 
-Cppcheck runs for every push on the main branch and every pull request on all branches of cFS in Github Actions.
-
-For more information about Cppcheck, visit http://cppcheck.sourceforge.net/.
-
-## Local Unit Test
-[![Local Unit Test](https://github.com/nasa/osal/actions/workflows/local_unit_test.yml/badge.svg)](https://github.com/nasa/osal/actions/workflows/local_unit_test.yml)
-
-This action tests our code using GCC's coverage testing tool gcov.
-
-Local Unit Test runs for every push and every pull request on all branches of cFS in Github Actions.
-
-## Documentation and Guides
-[![Documentation and Guides](https://github.com/nasa/cfs/actions/workflows/build-documentation.yml/badge.svg)](https://github.com/nasa/cfs/actions/workflows/build-documentation.yml)
-
-This action creates doxygen documents for cFE, cFS users guide, and osal guide.
-
-Documentation and Guides runs for every push and every pull request on all branches of cFS in Github Actions. The workflow pushes the PDFs for every push on the main branch. The PDFs can be found at https://github.com/nasa/cfs/tree/gh-pages. 
-
-## Changelog
-[![Changelog](https://github.com/nasa/cfs/actions/workflows/changelog.yml/badge.svg)](https://github.com/nasa/cfs/actions/workflows/changelog.yml)
-
-This action creates a changelog file which documents all the issues in cFS.
-
-The Changelog action runs manually. 
-
-## Format Check
-[![Format Check](https://github.com/nasa/osal/actions/workflows/format-check.yml/badge.svg)](https://github.com/nasa/osal/actions/workflows/format-check.yml)
-
-This action uses [clang-format-10](https://github.com/nasa/cFS/blob/main/.clang-format) to check for format errors.
+When adding, renaming, disabling, or removing a workflow or repository composite action, update this document in the same pull request. This keeps the workflow inventory on `dev` synchronized with the actual automation.
